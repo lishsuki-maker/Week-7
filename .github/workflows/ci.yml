@@ -17,7 +17,7 @@ jobs:
     with:
       image_tag: ${{ github.sha }}
       push_image: false
-
+  
   terraform_deploy:
     if: github.event_name == 'pull_request'
     uses: ./.github/workflows/terraform-deploy.yml
@@ -25,11 +25,21 @@ jobs:
       env: dev
       action: plan
       image_tag: ${{ github.sha }}
-
+  
+  ecr_repository_create:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/terraform-deploy.yml
+    with: 
+      env: dev
+      action: create_ecr_repository
+      image_tag: ${{ github.sha }}
+        
   docker_build_and_push:
+    needs: ecr_repository_create
     if: github.event_name == 'push'
     uses: ./.github/workflows/docker-build-push.yml
     with:
+      env: dev
       image_tag: ${{ github.sha }}
       push_image: true
 

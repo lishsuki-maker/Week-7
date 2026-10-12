@@ -18,12 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Docker Build
-        run: docker build -t ${{ vars.ECR_REPOSITORY_URL }}:${{ inputs.image_tag }} ./app
+        run: docker build -t feedback_tracker:${{ inputs.image_tag }} ./app
 
       - name: Trivy scan 
         uses: aquasecurity/trivy-action@v0.36.0 
         with: 
-          image-ref: ${{ vars.ECR_REPOSITORY_URL }}:${{ inputs.image_tag }} 
+          image-ref: feedback_tracker:${{ inputs.image_tag }} 
           severity: CRITICAL
           exit-code: "1"
 
@@ -40,4 +40,8 @@ jobs:
 
       - name: Docker Push
         if: inputs.push_image
-        run: docker push ${{ vars.ECR_REPOSITORY_URL }}:${{ inputs.image_tag }}
+        run: |
+          ECR_REPOSITORY_URL="${{ steps.login-ecr.outputs.registry }}/${{ inputs.env }}-feedback-tracker-ecr"
+          docker tag feedback-tracker:${{ inputs.image_tag }} \
+            "$ECR_REPOSITORY_URL:${{ inputs.image_tag }}"
+          docker push "$ECR_REPOSITORY_URL:${{ inputs.image_tag }}"

@@ -56,8 +56,19 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-path: terraform/envs/${{ inputs.env }}/terraform_plan_output.txt
-          edit-mode: replace 
-     
+          edit-mode: replace
+
+      - name: Create ECR Repository
+        if: inputs.action == 'create_ecr_repository'
+        run: |
+          terraform apply \
+            -target="module.feedback_tracker.aws_ecr_repository.feedback_tracker" \
+            -var="image_tag=${{ inputs.image_tag }}" \
+            -auto-approve
+
       - name: Terraform Apply
         if: inputs.action == 'apply'
-        run: terraform apply -auto-approve -var="image_tag=${{ inputs.image_tag }}"
+        run: |
+          terraform apply \
+            -var="image_tag=${{ inputs.image_tag }}" \
+            -auto-approve
