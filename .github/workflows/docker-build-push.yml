@@ -7,6 +7,9 @@ on:
       image_tag:
         required: true
         type: string
+      env:
+        required: false 
+        type: string
 
 permissions:
   contents: read
@@ -36,6 +39,7 @@ jobs:
 
       - name: Login to AWS ECR
         if: inputs.push_image 
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Docker Push
