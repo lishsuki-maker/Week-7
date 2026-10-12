@@ -84,26 +84,26 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "feedback_tracker-ngw" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public_a.id
-  
+
   depends_on = [
-   aws_internet_gateway.feedback_tracker-igw
+    aws_internet_gateway.feedback_tracker-igw
   ]
 }
 
 resource "aws_route_table" "private_app_a" {
   vpc_id = aws_vpc.feedback_tracker-vpc.id
   route {
-   cidr_block = "0.0.0.0/0"
-   nat_gateway_id = aws_nat_gateway.feedback_tracker-ngw.id
- }
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.feedback_tracker-ngw.id
+  }
 }
 
 resource "aws_route_table" "private_app_b" {
   vpc_id = aws_vpc.feedback_tracker-vpc.id
   route {
-   cidr_block = "0.0.0.0/0"
-   nat_gateway_id = aws_nat_gateway.feedback_tracker-ngw.id
- }
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.feedback_tracker-ngw.id
+  }
 }
 
 resource "aws_route_table_association" "private_app_a" {
@@ -114,7 +114,7 @@ resource "aws_route_table_association" "private_app_a" {
 resource "aws_route_table_association" "private_app_b" {
   route_table_id = aws_route_table.private_app_b.id
   subnet_id      = aws_subnet.private_app_b.id
-}	
+}
 
 resource "aws_security_group" "alb" {
   name   = "${var.env}-feedback-tracker-alb-sg"
@@ -268,7 +268,7 @@ resource "aws_rds_cluster" "feedback_tracker" {
   cluster_identifier = "${var.env}-feedback-tracker-db-cluster"
 
   engine      = "aurora-mysql"
-  engine_mode = "provisioned" 
+  engine_mode = "provisioned"
 
   database_name   = var.DB_NAME
   master_username = var.MYSQL_USER

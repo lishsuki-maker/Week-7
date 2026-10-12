@@ -1,39 +1,39 @@
 variable "vpc_cidr" {
- type = string
+  type = string
 }
 
 variable "env" {
- type = string
+  type = string
 }
 
 variable "DB_NAME" {
- type = string
+  type = string
 }
 
 variable "MYSQL_USER" {
- type = string 
+  type = string
 }
 
 variable "db_max_acu" {
- type = number
-} 
+  type = number
+}
 
 variable "task_cpu" {
- type = number
+  type = number
 }
 
 variable "task_memory" {
- type = number
-} 
+  type = number
+}
 
 variable "image_tag" {
- type = string
+  type = string
 }
 
 variable "DB_PORT" {
- type = number
+  type = number
 }
 
 variable "desired_count" {
- type = number
+  type = number
 }
