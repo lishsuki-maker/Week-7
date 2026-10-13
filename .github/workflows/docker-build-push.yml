@@ -1,0 +1,51 @@
+on:
+  workflow_call:
+    inputs:
+      push_image:
+        required: true
+        type: boolean
+      image_tag:
+        required: true
+        type: string
+      env:
+        required: false 
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  docker_build_and_push: 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docker Build
+        run: docker build -t feedback_tracker:${{ inputs.image_tag }} ./app
+
+      - name: Trivy scan 
+        uses: aquasecurity/trivy-action@v0.36.0 
+        with: 
+          image-ref: feedback_tracker:${{ inputs.image_tag }} 
+          severity: CRITICAL
+          exit-code: "1"
+
+      - name: Authenticate to AWS using OIDC
+        if: inputs.push_image
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-southeast-2
+
+      - name: Login to AWS ECR
+        if: inputs.push_image 
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker Push
+        if: inputs.push_image
+        run: |
+          ECR_REPOSITORY_URL="${{ steps.login-ecr.outputs.registry }}/${{ inputs.env }}-feedback-tracker-ecr"
+          docker tag feedback-tracker:${{ inputs.image_tag }} \
+            "$ECR_REPOSITORY_URL:${{ inputs.image_tag }}"
+          docker push "$ECR_REPOSITORY_URL:${{ inputs.image_tag }}"

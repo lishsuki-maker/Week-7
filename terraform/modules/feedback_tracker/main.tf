@@ -84,26 +84,26 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "feedback_tracker-ngw" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public_a.id
-  
+
   depends_on = [
-   aws_internet_gateway.feedback_tracker-igw
+    aws_internet_gateway.feedback_tracker-igw
   ]
 }
 
 resource "aws_route_table" "private_app_a" {
   vpc_id = aws_vpc.feedback_tracker-vpc.id
   route {
-   cidr_block = "0.0.0.0/0"
-   nat_gateway_id = aws_nat_gateway.feedback_tracker-ngw.id
- }
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.feedback_tracker-ngw.id
+  }
 }
 
 resource "aws_route_table" "private_app_b" {
   vpc_id = aws_vpc.feedback_tracker-vpc.id
   route {
-   cidr_block = "0.0.0.0/0"
-   nat_gateway_id = aws_nat_gateway.feedback_tracker-ngw.id
- }
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.feedback_tracker-ngw.id
+  }
 }
 
 resource "aws_route_table_association" "private_app_a" {
@@ -114,10 +114,10 @@ resource "aws_route_table_association" "private_app_a" {
 resource "aws_route_table_association" "private_app_b" {
   route_table_id = aws_route_table.private_app_b.id
   subnet_id      = aws_subnet.private_app_b.id
-}	
+}
 
 resource "aws_security_group" "alb" {
-  name   = "${var.env}-feedback_tracker-alb_sg"
+  name   = "${var.env}-feedback-tracker-alb-sg"
   vpc_id = aws_vpc.feedback_tracker-vpc.id
 
   ingress {
@@ -136,7 +136,7 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "app" {
-  name   = "${var.env}-feedback_tracker-app_sg"
+  name   = "${var.env}-feedback-tracker-app-sg"
   vpc_id = aws_vpc.feedback_tracker-vpc.id
 
   ingress {
@@ -155,7 +155,7 @@ resource "aws_security_group" "app" {
 }
 
 resource "aws_security_group" "db" {
-  name   = "${var.env}-feedback_tracker-db_sg"
+  name   = "${var.env}-feedback-tracker-db-sg"
   vpc_id = aws_vpc.feedback_tracker-vpc.id
 
   ingress {
@@ -167,7 +167,7 @@ resource "aws_security_group" "db" {
 }
 
 resource "aws_ecr_repository" "feedback_tracker" {
-  name                 = "${var.env}-feedback_tracker-ecr"
+  name                 = "${var.env}-feedback-tracker-ecr"
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
@@ -199,7 +199,7 @@ resource "aws_ecr_lifecycle_policy" "feedback_tracker" {
 }
 
 resource "aws_lb" "feedback_tracker" {
-  name               = "${var.env}-feedback_tracker-alb"
+  name               = "${var.env}-feedback-tracker-alb"
   internal           = false
   load_balancer_type = "application"
 
@@ -214,7 +214,7 @@ resource "aws_lb" "feedback_tracker" {
 }
 
 resource "aws_lb_target_group" "feedback_tracker" {
-  name        = "${var.env}-feedback_tracker-tg"
+  name        = "${var.env}-feedback-tracker-tg"
   port        = 5000
   protocol    = "HTTP"
   target_type = "ip"
@@ -239,7 +239,7 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_cloudwatch_log_group" "feedback_tracker" {
-  name              = "/ecs/${var.env}-feedback_tracker"
+  name              = "/ecs/${var.env}-feedback-tracker"
   retention_in_days = 14
 }
 
@@ -248,7 +248,7 @@ resource "random_password" "db_password" {
 }
 
 resource "aws_secretsmanager_secret" "db_password" {
-  name = "${var.env}-feedback_tracker-db_password"
+  name = "${var.env}-feedback-tracker-db-password"
 }
 
 resource "aws_secretsmanager_secret_version" "db_password" {
@@ -257,7 +257,7 @@ resource "aws_secretsmanager_secret_version" "db_password" {
 }
 
 resource "aws_db_subnet_group" "feedback_tracker" {
-  name = "${var.env}-feedback_tracker-db_subnets"
+  name = "${var.env}-feedback-tracker-db-subnets"
   subnet_ids = [
     aws_subnet.private_db_a.id,
     aws_subnet.private_db_b.id
@@ -265,10 +265,10 @@ resource "aws_db_subnet_group" "feedback_tracker" {
 }
 
 resource "aws_rds_cluster" "feedback_tracker" {
-  cluster_identifier = "${var.env}-feedback_tracker-db_cluster"
+  cluster_identifier = "${var.env}-feedback-tracker-db-cluster"
 
   engine      = "aurora-mysql"
-  engine_mode = "provisioned" 
+  engine_mode = "provisioned"
 
   database_name   = var.DB_NAME
   master_username = var.MYSQL_USER
@@ -287,7 +287,7 @@ resource "aws_rds_cluster" "feedback_tracker" {
 }
 
 resource "aws_rds_cluster_instance" "feedback_tracker" {
-  identifier         = "${var.env}-feedback_tracker-db_instance"
+  identifier         = "${var.env}-feedback-tracker-db-instance"
   cluster_identifier = aws_rds_cluster.feedback_tracker.id
 
   instance_class = "db.serverless"
@@ -295,11 +295,11 @@ resource "aws_rds_cluster_instance" "feedback_tracker" {
 }
 
 resource "aws_ecs_cluster" "feedback_tracker" {
-  name = "${var.env}-feedback_tracker-cluster"
+  name = "${var.env}-feedback-tracker-cluster"
 }
 
 resource "aws_iam_role" "task_execution" {
-  name = "${var.env}-feedback_tracker-task_execution-role"
+  name = "${var.env}-feedback-tracker-task-execution-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -324,7 +324,7 @@ resource "aws_iam_role_policy_attachment" "task_execution" {
 }
 
 resource "aws_iam_role_policy" "read_db_secret" {
-  name = "${var.env}-feedback_tracker-read_db_secret"
+  name = "${var.env}-feedback-tracker-read-db-secret"
   role = aws_iam_role.task_execution.id
 
   policy = jsonencode({
@@ -345,7 +345,7 @@ resource "aws_iam_role_policy" "read_db_secret" {
 }
 
 resource "aws_ecs_task_definition" "feedback_tracker" {
-  family                   = "${var.env}-feedback_tracker-task"
+  family                   = "${var.env}-feedback-tracker-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
 
@@ -410,7 +410,7 @@ resource "aws_ecs_task_definition" "feedback_tracker" {
 }
 
 resource "aws_ecs_service" "feedback_tracker" {
-  name            = "${var.env}-feedback_tracker-service"
+  name            = "${var.env}-feedback-tracker-service"
   cluster         = aws_ecs_cluster.feedback_tracker.id
   task_definition = aws_ecs_task_definition.feedback_tracker.arn
   desired_count   = var.desired_count

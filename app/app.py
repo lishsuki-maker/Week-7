@@ -12,7 +12,6 @@ db_config = {
     "port": int(os.getenv("DB_PORT", 3306))
 }
 
-
 def get_connection():
     return mysql.connector.connect(**db_config)
 
@@ -35,9 +34,13 @@ def create_feedback():
         (feedback,)
     )
     database.commit()
+    feedback_id = cursor.lastrowid
     cursor.close()
     database.close()
-    return jsonify({"message": "Your feedback has been successfully created"}), 201
+    return jsonify({
+        "id": feedback_id,
+        "message": "Your feedback has been successfully created"
+    }), 201
 
 @app.route("/api/feedback", methods=["GET"])
 def list_feedback():

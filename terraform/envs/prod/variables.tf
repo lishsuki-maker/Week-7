@@ -1,15 +1,15 @@
 variable "DB_NAME" {
- type = string
+  type = string
 }
 
 variable "MYSQL_USER" {
- type = string
+  type = string
 }
 
 variable "image_tag" {
- type = string
+  type = string
 }
 
 variable "DB_PORT" {
- type = number
+  type = number
 }

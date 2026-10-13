@@ -1,0 +1,115 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  docker_build:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/docker-build-push.yml
+    secrets: inherit
+    with:
+      image_tag: ${{ github.sha }}
+      push_image: false
+  
+  terraform_deploy:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/terraform-deploy.yml
+    secrets: inherit
+    with:
+      env: dev
+      action: plan
+      image_tag: ${{ github.sha }}
+  
+  ecr_repository_create:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/terraform-deploy.yml
+    secrets: inherit
+    with: 
+      env: dev
+      action: create_ecr_repository
+      image_tag: ${{ github.sha }}
+        
+  docker_build_and_push:
+    needs: ecr_repository_create
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/docker-build-push.yml
+    secrets: inherit
+    with:
+      env: dev
+      image_tag: ${{ github.sha }}
+      push_image: true
+
+  deploy_dev:
+    needs: docker_build_and_push
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/terraform-deploy.yml
+    secrets: inherit
+    with:
+      env: dev
+      action: apply
+      image_tag: ${{ github.sha }}
+
+  smoke_test:
+    needs: deploy_dev
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Authenticate to AWS using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-southeast-2
+
+      - name: Retrieve URL of Feedback Tracker dev
+        working-directory: terraform/envs/dev
+        run: |
+          terraform init
+          DEV_FEEDBACK_TRACKER_URL=$(terraform output -raw feedback_tracker_url)
+          echo "DEV_FEEDBACK_TRACKER_URL=$DEV_FEEDBACK_TRACKER_URL" >> "$GITHUB_ENV"
+
+      - name: Check Health of Feedback Tracker
+        run: |
+          STATUS=$(curl -sS -o /dev/null -w "%{http_code}" "$DEV_FEEDBACK_TRACKER_URL/health")
+
+          if [ "$STATUS" = "200" ]; then
+            echo "STATUS=$STATUS" >> "$GITHUB_ENV"
+          else
+            echo "Smoke test failed with HTTP $STATUS"
+            exit 1
+          fi
+
+      - name: Create and Read a Feedback Record
+        run: |
+          FEEDBACK_RECORD=$(curl -sSf \
+            -X POST "$DEV_FEEDBACK_TRACKER_URL/api/feedback" \
+            -H "Content-Type: application/json" \
+            -d '{"feedback":"The food was nice. This feedback is automatically created only when the health check returns 200."}')
+
+          FEEDBACK_ID=$(echo "$FEEDBACK_RECORD" | jq -er '.id')
+
+          curl -f "$DEV_FEEDBACK_TRACKER_URL/api/feedback/$FEEDBACK_ID"
+
+  deploy-prod:
+    needs: smoke_test
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/terraform-deploy.yml
+    secrets: inherit
+    with:
+      env: prod
+      action: apply
+      image_tag: ${{ github.sha }}
