@@ -36,7 +36,7 @@ jobs:
       - name: Authenticate to AWS using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::650694420923:role/Containerized_REST_API-OIDC-Role
           aws-region: ap-southeast-2
 
       - name: Terraform Init
