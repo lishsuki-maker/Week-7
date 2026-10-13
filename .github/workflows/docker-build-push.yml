@@ -46,6 +46,6 @@ jobs:
         if: inputs.push_image
         run: |
           ECR_REPOSITORY_URL="${{ steps.login-ecr.outputs.registry }}/${{ inputs.env }}-feedback-tracker-ecr"
-          docker tag feedback-tracker:${{ inputs.image_tag }} \
+          docker tag feedback_tracker:${{ inputs.image_tag }} \
             "$ECR_REPOSITORY_URL:${{ inputs.image_tag }}"
           docker push "$ECR_REPOSITORY_URL:${{ inputs.image_tag }}"
