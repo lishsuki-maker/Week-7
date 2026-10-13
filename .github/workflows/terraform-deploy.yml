@@ -66,6 +66,10 @@ jobs:
 
       - name: Create ECR Repository
         if: inputs.action == 'create_ecr_repository'
+        env:
+          TF_VAR_DB_NAME: ${{ vars.DB_NAME }}
+          TF_VAR_MYSQL_USER: ${{ vars.MYSQL_USER }}
+          TF_VAR_DB_PORT: ${{ vars.DB_PORT }}  
         run: |
           terraform apply \
           -input=false \
