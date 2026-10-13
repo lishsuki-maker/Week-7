@@ -2,7 +2,7 @@ on:
   workflow_call:
     inputs:
       push_image:
-        required: true
+        required: false
         type: boolean
       image_tag:
         required: true
