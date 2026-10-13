@@ -79,6 +79,10 @@ jobs:
 
       - name: Terraform Apply
         if: inputs.action == 'apply'
+        env:
+          TF_VAR_DB_NAME: ${{ vars.DB_NAME }}
+          TF_VAR_MYSQL_USER: ${{ vars.MYSQL_USER }}
+          TF_VAR_DB_PORT: ${{ vars.DB_PORT }}
         run: |
           terraform apply \
             -var="image_tag=${{ inputs.image_tag }}" \
